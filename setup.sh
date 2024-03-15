@@ -1,4 +1,4 @@
-#!/env bash
+#!/env bash -l
 
 # Execute via:
 #   curl -s https://raw.githubusercontent.com/jhyland87/rpi-boostrap/main/hello-world.sh | bash
