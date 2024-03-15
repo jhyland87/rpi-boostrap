@@ -1,4 +1,7 @@
-#!/usr/bin/bash 
+#!/env bash
+
+# Execute via:
+#   curl -s https://raw.githubusercontent.com/jhyland87/rpi-boostrap/main/hello-world.sh | bash
 
 # TODO
 # - Disable scrolling for history
@@ -35,6 +38,9 @@ sudo raspi-config nonint is_pithree && echo -e "System is Raspberry PI 3"
 sudo raspi-config nonint is_pifour && echo -e "System is Raspberry PI 4"
 sudo raspi-config nonint is_pifive && echo -e "System is ${bold}Raspberry PI ${red}5${none}"
 
+
+[[ -d ./tmp ]] || mkdir ./tmp
+
 echo "Enabling UART for serial connections in /boot/config.txt..."
 echo "enable_uart=1" >> /boot/config.txt
 
@@ -46,20 +52,37 @@ echo -e "dtparam=uart0\ndtparam=uart0_console" >> /boot/firmware/config.txt
 
 # Create custom SSH banner
 echo -en "Creating custom banner... "
-figlet -k $(raspi-config nonint get_hostname) > /etc/banner
-echo -e "Please login..." >> /etc/banner
-echo "Banner /etc/banner" > /etc/ssh/sshd_config.d/banner.conf
-[[ $? == 0 ]] && echo -e "Done (/etc/ssh/sshd_config.d/banner.conf)" || err "Faild to create /etc/ssh/sshd_config.d/banner.conf"
+figlet -k $(raspi-config nonint get_hostname) > ./tmp/banner
+echo -e "Please login..." >> ./tmp/banner
+sudo cp -v ./tmp/banner /etc/banner
+sudo echo "Banner /etc/banner" > /etc/ssh/sshd_config.d/banner.conf
+
+# [[ $? == 0 ]] && echo -e "Done (/etc/ssh/sshd_config.d/banner.conf)" || err "Faild to create /etc/ssh/sshd_config.d/banner.conf"
+
+if [[ $? == 0 ]]; then
+  echo -e "Done (/etc/ssh/sshd_config.d/banner.conf)"
+else
+  err "Faild to create /etc/ssh/sshd_config.d/banner.conf"
+fi
 
 # Create custom shell MOTD
 echo -en "Creating custom MOTD... "
-[[ -f /etc/motd ]] && mv /etc/motd /etc/motd.$(date +%s).bak
-echo -e '\e[38;5;142m' > /etc/motd
-figlet -k Welcome >> /etc/motd
-echo -e '\e[0m' >> /etc/motd
-echo -e "\nThis is my custom motd..\n" >> /etc/motd
+[[ -f /etc/motd ]] && sudo mv /etc/motd /etc/motd.$(date +%s).bak
+echo -e '\e[38;5;142m' > ./tmp/motd
+figlet -k Welcome >> ./tmp/motd
+echo -e '\e[0m' >> ./tmp/motd
+echo -e "\nThis is my custom motd..\n" >> ./tmp/motd
 
-[[ $? == 0 ]] && echo -e "Done (/etc/motd)" || err "Faild to update /etc/motd"
+sudo cp -v ./tmp/motd /etc/motd
+
+if [[ $? == 0 ]]; then
+  echo -e "Done (/etc/motd)"
+else
+   err "Faild to update /etc/motd"
+fi
+
+
+#[[ $? == 0 ]] && echo -e "Done (/etc/motd)" || err "Faild to update /etc/motd"
 
 sudo systemctl restart sshd
 
@@ -79,11 +102,12 @@ sudo systemctl restart sshd
 #   locate/updatedb
 sudo apt-get update -y \
   && sudo apt full-upgrade \
-  && sudo apt-get install -y wget git vim htop figlet toilet dbar golang \
-  || err "failed to apt-get update and/or apt-get install" 1
+  && sudo apt-get install -y wget git vim htop figlet toilet dbar golang 
+  #|| err "failed to apt-get update and/or apt-get install" 1
 
-
-[[ -d ~/tmp ]] || mkdir ~/tmp
+if [[ $? != 0 ]]; then
+  err "failed to apt-get update and/or apt-get install" 1
+fi
 
 
 echo -e "Installing Golang..."
@@ -110,10 +134,8 @@ fi
 echo -e "\n\n${_dirtyyellow}Creating general_profie.sh...${_none}"
 
 [[ ! -x /etc/profile.d/general_profie.sh ]] \
-  && cat << EOF > ~/tmp/general_profile.sh \
-  && sudo install -m 0755 -o root ~/tmp/general_profile.sh /etc/profile.d/general_profile.sh \
-  && rm ~/tmp/general_profile.sh \
-  || err "Failed to implement new general_profile.sh"
+  && cat << EOF > ./tmp/general_profile.sh \
+  && sudo install -m 0755 -o root ./tmp/general_profile.sh /etc/profile.d/general_profile.sh 
 export EDITOR="vim -p"
 export CLICOLOR=1
 export LSCOLORS=ExFxBxDxCxegedabagacad
@@ -126,6 +148,8 @@ alias lh="ls -Alrth"
 alias vim="vim -p"
 EOF
 
+
+
 [[ $? == 0 ]] && echo -e "Successfully created /etc/profile.d/general_profile.sh"
 
 [[ -x /etc/profile.d/general_profie.sh ]] && . /etc/profile.d/general_profie.sh
@@ -134,9 +158,9 @@ EOF
 echo -e "\n\n${_dirtyyellow}Creating new prompt_command.sh...${_none}"
 
 [[ ! -x /etc/profile.d/prompt_command.sh ]] && \
-  cat <<EOF > ~/tmp/prompt_command.sh \
-  && sudo install -m 0755 -o root ~/tmp/prompt_command.sh /etc/profile.d/prompt_command.sh \
-  && rm ~/tmp/prompt_command.sh \
+  cat <<EOF > ./tmp/prompt_command.sh \
+  && sudo install -m 0755 -o root ./tmp/prompt_command.sh /etc/profile.d/prompt_command.sh \
+  && rm ./tmp/prompt_command.sh \
   || err "Failed to implement new prompt_command.sh"
 PROMPT_COMMAND=__prompt_command
 __prompt_command() {
@@ -212,7 +236,6 @@ echo -e "\n\n${_dirtyyellow}Creating new vimrc.local...${_none}"
 [[ ! -x /etc/vim/vimrc.local ]] \
   && cat << EOF > ~/vimrc.local \
   && sudo install -m 0755 -o root ~/vimrc.local /etc/vim/vimrc.local \
-  && rm ~/vimrc.local \
   || err "Failed to implement new vimrc.local"
 filetype plugin indent on
 " On pressing tab, insert 2 spaces
