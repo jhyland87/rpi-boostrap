@@ -302,9 +302,8 @@ EOF
 echo -en "\n\nDone"
 
 # Reload terminal
-exec bash -l
 
-[[ $? != 0 ]] && _err "Failed to reload terminal. Execute: ${_ital}exec bash -l"
 
+echo -e "\n\nExecute ${_bold}exec bash -l${_none} to reload terminal\n"
 
 
