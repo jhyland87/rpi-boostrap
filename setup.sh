@@ -54,8 +54,10 @@ echo -e "dtparam=uart0\ndtparam=uart0_console" >> /boot/firmware/config.txt
 echo -en "Creating custom banner... "
 figlet -k $(raspi-config nonint get_hostname) > ./tmp/banner
 echo -e "Please login..." >> ./tmp/banner
-sudo cp -v ./tmp/banner /etc/banner
-sudo echo "Banner /etc/banner" > /etc/ssh/sshd_config.d/banner.conf
+sudo install -m 0755 -o root ./tmp/banner /etc/banner
+
+echo "Banner /etc/banner" > ./tmp/banner.conf
+sudo install -m 0755 -o root ./tmp/banner.conf /etc/ssh/sshd_config.d/banner.conf
 
 # [[ $? == 0 ]] && echo -e "Done (/etc/ssh/sshd_config.d/banner.conf)" || err "Faild to create /etc/ssh/sshd_config.d/banner.conf"
 
@@ -67,13 +69,14 @@ fi
 
 # Create custom shell MOTD
 echo -en "Creating custom MOTD... "
-[[ -f /etc/motd ]] && sudo mv /etc/motd /etc/motd.$(date +%s).bak
+[[ -f /etc/motd ]] && sudo cp /etc/motd ./tmp/motd.$(date +%s).bak
 echo -e '\e[38;5;142m' > ./tmp/motd
 figlet -k Welcome >> ./tmp/motd
 echo -e '\e[0m' >> ./tmp/motd
 echo -e "\nThis is my custom motd..\n" >> ./tmp/motd
 
-sudo cp -v ./tmp/motd /etc/motd
+sudo install -m 0755 -o root ./tmp/motd /etc/motd
+
 
 if [[ $? == 0 ]]; then
   echo -e "Done (/etc/motd)"
